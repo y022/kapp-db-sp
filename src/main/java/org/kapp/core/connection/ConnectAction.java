@@ -1,4 +1,4 @@
-package org.kapp;
+package org.kapp.core.connection;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

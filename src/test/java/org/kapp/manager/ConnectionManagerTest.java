@@ -22,7 +22,6 @@ class ConnectionManagerTest {
         Connection con = cm.getCon();
         CallableStatement callableStatement = con.prepareCall("select 1;");
         boolean execute = callableStatement.execute();
-        Thread.sleep(20000);
         Assertions.assertTrue(execute);
         con.close();
     }

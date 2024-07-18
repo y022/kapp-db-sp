@@ -42,12 +42,13 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${slf4j.version}</version> <!-- 确保使用最新的稳定版本 -->
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -1,6 +1,6 @@
 package org.kapp.core;
 
-import org.kapp.DbSpConnection;
+import org.kapp.core.connection.DbSpConnection;
 import org.kapp.entity.ConnectionStatus;
 import org.kapp.support.property.DbSpProperties;
 import org.slf4j.Logger;

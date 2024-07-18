@@ -1,6 +1,6 @@
 package org.kapp.support.task;
 
-import org.kapp.DbSpConnection;
+import org.kapp.core.connection.DbSpConnection;
 import org.kapp.core.DbSpPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
