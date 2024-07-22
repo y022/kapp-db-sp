@@ -39,7 +39,6 @@ public class PropertiesLoader {
         dbSpProperties.setUrl(String.valueOf(APP_PROPERTIES.get("kapp.db.sp.url")));
         dbSpProperties.setUsername(String.valueOf(APP_PROPERTIES.get("kapp.db.sp.username")));
         dbSpProperties.setPassword(String.valueOf(APP_PROPERTIES.get("kapp.db.sp.password")));
-        dbSpProperties.setPassword(String.valueOf(APP_PROPERTIES.get("kapp.db.sp.password")));
 
         dbSpProperties.setMaxActiveThread(Integer.parseInt(Objects.toString(APP_PROPERTIES.get("kapp.db.sp.maxActiveThread"))));
         dbSpProperties.setMaxIdleThread(Integer.parseInt(Objects.toString(APP_PROPERTIES.get("kapp.db.sp.maxIdleThread"))));

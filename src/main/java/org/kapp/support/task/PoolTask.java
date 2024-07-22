@@ -39,14 +39,12 @@ public abstract class PoolTask implements Runnable {
                     }
                 }
             }
-
             if (semaphore.availablePermits() < maxIdleThread) {
                 while (semaphore.availablePermits() == maxIdleThread) {
                     logger.info("attempt to release the connection...");
                     dbSpPool.releaseSource();
                 }
             }
-
         }
     }
 }

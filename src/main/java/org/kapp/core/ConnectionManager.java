@@ -3,7 +3,7 @@ package org.kapp.core;
 import org.kapp.support.property.DbSpProperties;
 import org.kapp.support.property.PropertiesLoader;
 import org.kapp.support.task.ConnectionHealthyTask;
-import org.kapp.support.task.ConnectionInit;
+import org.kapp.support.task.ConnectionCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +22,7 @@ public class ConnectionManager {
     private final DbSpPool spPool;
     private final ScheduledExecutorService scheduledExecutorService;
     private final ThreadPoolExecutor executor;
-    private final ConnectionInit connectionInit;
+    private final ConnectionCreator connectionCreator;
 
     public ConnectionManager(DbSpProperties dbSpProperties) {
         spProperties = Objects.requireNonNullElseGet(dbSpProperties, PropertiesLoader::createConnectProperties);
@@ -35,13 +35,13 @@ public class ConnectionManager {
         });
         this.executor =
                 new ThreadPoolExecutor(2, 4, 60000, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(100000));
-        connectionInit = new ConnectionInit(spPool);
+        connectionCreator = new ConnectionCreator(spPool,true);
         initNecessaryProperty();
     }
 
     private void initNecessaryProperty() {
         scheduledExecutorService.schedule(new ConnectionHealthyTask(spPool), 5000, TimeUnit.MILLISECONDS);
-        executor.execute(connectionInit);
+        executor.execute(connectionCreator);
     }
 
     public Connection getCon() throws SQLException {
@@ -51,5 +51,6 @@ public class ConnectionManager {
             throw new SQLException(e);
         }
     }
+
 
 }

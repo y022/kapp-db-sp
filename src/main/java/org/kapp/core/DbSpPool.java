@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Author:Heping
@@ -19,12 +22,10 @@ import java.util.concurrent.*;
 public class DbSpPool implements PoolController<DbSpConnection> {
     private static final Logger LOG = LoggerFactory.getLogger(DbSpPool.class);
     private static final Object LOCK_OBJ = new Object();
-    private static final String TEST_QUERY = "select 1;";
     private final DbSpProperties spProperties;
     private final CopyOnWriteArrayList<DbSpConnection> all_connections;
     private final CopyOnWriteArrayList<DbSpConnection> ide_connections;
     private final Semaphore semaphore;
-//    private final ScheduledFuture
 
     public DbSpPool(DbSpProperties spProperties) {
         this.spProperties = spProperties;
@@ -32,6 +33,28 @@ public class DbSpPool implements PoolController<DbSpConnection> {
         all_connections = new CopyOnWriteArrayList<>();
         semaphore = new Semaphore(spProperties.getMaxIdleThread(), true);
         LOG.info("semaphore availablePermits:{}", semaphore.availablePermits());
+    }
+
+    /**
+     * try to get an idle connection with time-out
+     *
+     * @return warp connection
+     * @throws TimeoutException create time out
+     * @throws SQLException     sql exception
+     */
+    public Connection borrow() throws TimeoutException, SQLException {
+        try {
+            boolean acquired = semaphore.tryAcquire(spProperties.getConnectionTimeOut(), TimeUnit.MICROSECONDS);
+            if (acquired) {
+                DbSpConnection con = ide_connections.remove(0);
+                if (con != null) {
+                    return con.using();
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new TimeoutException("get connection time-out");
+        }
+        throw new SQLException("get connection failed");
     }
 
     /**
@@ -43,10 +66,10 @@ public class DbSpPool implements PoolController<DbSpConnection> {
      */
     private DbSpConnection create() throws SQLException {
         synchronized (LOCK_OBJ) {
-            long start = System.currentTimeMillis();
+
+
             Connection connection = DriverManager.getConnection(spProperties.getUrl(), spProperties.getUsername(), spProperties.getPassword());
-            boolean execute = connection.prepareCall(TEST_QUERY).execute();
-            if (execute) {
+            if (testCon(connection)) {
                 DbSpConnection dbSpConnection = new DbSpConnection(connection, spProperties.getMaxSurvivalTime(), ConnectionStatus.IDLE);
                 all_connections.add(dbSpConnection);
                 ide_connections.add(dbSpConnection);
@@ -59,28 +82,15 @@ public class DbSpPool implements PoolController<DbSpConnection> {
     }
 
 
-    /**
-     * try to get an idle connection with time-out
-     *
-     * @return
-     * @throws TimeoutException
-     */
-    public Connection borrow() throws TimeoutException, SQLException {
-        try {
-            boolean acquired = semaphore.tryAcquire(spProperties.getConnectionTimeOut(), TimeUnit.MICROSECONDS);
-            if (acquired) {
-                DbSpConnection con = ide_connections.remove(0);
-                if (con != null) {
-                    return con.using();
-                }
+    @Override
+    public Semaphore releaseSource() {
+        synchronized (LOCK_OBJ) {
+            if (semaphore.availablePermits() < spProperties.getMaxIdleThread()) {
+                semaphore.release();
             }
-        } catch (InterruptedException e) {
-            LOG.error("", e);
-            throw new TimeoutException("get connection time-out");
         }
-        throw new SQLException("get connection failed");
+        return sourceLimiter();
     }
-
 
     @Override
     public DbSpProperties poolProperty() {
@@ -92,15 +102,6 @@ public class DbSpPool implements PoolController<DbSpConnection> {
         return this.semaphore;
     }
 
-    @Override
-    public Semaphore releaseSource() {
-        synchronized (LOCK_OBJ) {
-            if (semaphore.availablePermits() < spProperties.getMaxIdleThread()) {
-                semaphore.release();
-            }
-        }
-        return this.semaphore;
-    }
 
     @Override
     public Collection<DbSpConnection> sourceIdle() {

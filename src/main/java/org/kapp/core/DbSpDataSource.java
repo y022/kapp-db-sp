@@ -15,12 +15,11 @@ import java.util.logging.Logger;
  */
 public class DbSpDataSource implements DataSource {
     private final DbSpProperties spProperties;
-
     private final ConnectionManager connectionManager;
 
-    public DbSpDataSource(DbSpProperties spProperties, ConnectionManager connectionManager) {
+    public DbSpDataSource(DbSpProperties spProperties) {
         this.spProperties = spProperties;
-        this.connectionManager = connectionManager;
+        this.connectionManager = new ConnectionManager(spProperties);
     }
 
 
@@ -51,8 +50,6 @@ public class DbSpDataSource implements DataSource {
 
     @Override
     public int getLoginTimeout() throws SQLException {
-
-
         return 0;
     }
 
