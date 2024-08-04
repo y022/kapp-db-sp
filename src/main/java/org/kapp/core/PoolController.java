@@ -1,10 +1,13 @@
 package org.kapp.core;
 
+import org.kapp.entity.Val;
 import org.kapp.support.property.DbSpProperties;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Author:Heping
@@ -21,5 +24,14 @@ public interface PoolController<T> {
 
     Collection<T> AllSource();
 
+    void appendCon() throws SQLException;
+
+    default boolean testCon(Connection connection) {
+        try {
+            return connection.prepareCall(Val.TEST_QUERY).execute();
+        } catch (Exception e) {
+            return false;
+        }
+    }
     void newSource() throws SQLException;
 }
