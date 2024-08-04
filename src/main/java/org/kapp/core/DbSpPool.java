@@ -118,6 +118,11 @@ public class DbSpPool implements PoolController<DbSpConnection>, DbSpMetrics {
     }
 
     @Override
+    public void appendCon() throws SQLException {
+        create();
+    }
+
+    @Override
     public void newSource() throws SQLException {
         DbSpConnection dbSpConnection = create();
     }
