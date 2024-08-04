@@ -1,6 +1,6 @@
 package org.kapp.core.connection;
 
-import org.kapp.entity.ConnectionStatus;
+import org.kapp.entity.SourceStatus;
 
 import java.sql.*;
 import java.util.Map;
@@ -21,7 +21,6 @@ public abstract class AbstractDbSpConnection implements Connection {
      */
     protected Connection delegate;
 
-
     public abstract AbstractDbSpConnection using();
 
     public abstract void tryClose();
@@ -32,7 +31,7 @@ public abstract class AbstractDbSpConnection implements Connection {
 
     public abstract boolean available_idle();
 
-    public abstract ConnectionStatus status();
+    public abstract SourceStatus status();
 
     @Override
     public Statement createStatement() throws SQLException {
@@ -81,7 +80,7 @@ public abstract class AbstractDbSpConnection implements Connection {
 
     @Override
     public boolean isClosed() throws SQLException {
-        return ConnectionStatus.CLOSED.equals(status());
+        return SourceStatus.CLOSED.equals(status());
     }
 
     @Override

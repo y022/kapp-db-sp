@@ -17,9 +17,9 @@ public interface PoolController<T> {
 
     Semaphore releaseSource();
 
-    Collection<T> sourceIdle();
+    Collection<T> IdleSource();
 
-    Collection<T> sourceAll();
+    Collection<T> AllSource();
 
-    void appendCon() throws SQLException;
+    void newSource() throws SQLException;
 }

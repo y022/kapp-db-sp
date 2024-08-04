@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.kapp.core.ConnectionManager;
 import org.kapp.core.DbSpPool;
+import org.openjdk.jol.info.ClassLayout;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -24,5 +25,11 @@ class ConnectionManagerTest {
         boolean execute = callableStatement.execute();
         Assertions.assertTrue(execute);
         con.close();
+    }
+
+    @Test
+    public void test_(){
+        ConnectionManager cm = new ConnectionManager(null);
+        System.out.println("ClassLayout.parseInstance(cm) = " + ClassLayout.parseInstance(cm).toPrintable());
     }
 }

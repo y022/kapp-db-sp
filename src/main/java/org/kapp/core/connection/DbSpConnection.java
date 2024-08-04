@@ -1,6 +1,6 @@
 package org.kapp.core.connection;
 
-import org.kapp.entity.ConnectionStatus;
+import org.kapp.entity.SourceStatus;
 
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -21,17 +21,17 @@ public class DbSpConnection extends AbstractDbSpConnection {
     /**
      * connection-status
      *
-     * @see ConnectionStatus
+     * @see SourceStatus
      */
-    private volatile ConnectionStatus status;
+    private volatile SourceStatus status;
 
-    private static final AtomicReferenceFieldUpdater<DbSpConnection, ConnectionStatus> STATUS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(DbSpConnection.class, ConnectionStatus.class, "status");
+    private static final AtomicReferenceFieldUpdater<DbSpConnection, SourceStatus> STATUS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(DbSpConnection.class, SourceStatus.class, "status");
 
     private final Runnable runnable;
 
     private static final Object OBJ = new Object();
 
-    public DbSpConnection(Connection delegate, long maxSurvivalTime, ConnectionStatus status) {
+    public DbSpConnection(Connection delegate, long maxSurvivalTime, SourceStatus status) {
         super(delegate);
         this.status = status;
         this.createTime = System.currentTimeMillis();
@@ -46,20 +46,20 @@ public class DbSpConnection extends AbstractDbSpConnection {
 
     @Override
     public DbSpConnection using() {
-        STATUS_UPDATER.set(this, ConnectionStatus.RUNNING);
+        STATUS_UPDATER.set(this, SourceStatus.RUNNING);
         return this;
     }
 
     @Override
     public void tryClose() {
-        if (ConnectionStatus.CLOSED != status) {
-            STATUS_UPDATER.set(this, ConnectionStatus.CLOSED);
+        if (SourceStatus.CLOSED != status) {
+            STATUS_UPDATER.set(this, SourceStatus.CLOSED);
         }
     }
 
     @Override
     public boolean canStop() {
-        return ConnectionStatus.CLOSED.equals(STATUS_UPDATER.get(this));
+        return SourceStatus.CLOSED.equals(STATUS_UPDATER.get(this));
     }
 
     @Override
@@ -73,11 +73,11 @@ public class DbSpConnection extends AbstractDbSpConnection {
 
     @Override
     public boolean available_idle() {
-        return status.equals(ConnectionStatus.IDLE);
+        return status.equals(SourceStatus.IDLE);
     }
 
     @Override
-    public ConnectionStatus status() {
+    public SourceStatus status() {
         return STATUS_UPDATER.get(this);
     }
 

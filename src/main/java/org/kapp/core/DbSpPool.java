@@ -1,7 +1,8 @@
 package org.kapp.core;
 
 import org.kapp.core.connection.DbSpConnection;
-import org.kapp.entity.ConnectionStatus;
+import org.kapp.entity.SourceStatus;
+import org.kapp.support.metrics.DbSpMetrics;
 import org.kapp.support.property.DbSpProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +11,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Author:Heping
  * Date: 2024/7/17 22:13
  */
-public class DbSpPool implements PoolController<DbSpConnection> {
+public class DbSpPool implements PoolController<DbSpConnection>, DbSpMetrics {
     private static final Logger LOG = LoggerFactory.getLogger(DbSpPool.class);
     private static final Object LOCK_OBJ = new Object();
     private static final String TEST_QUERY = "select 1;";
@@ -24,7 +28,6 @@ public class DbSpPool implements PoolController<DbSpConnection> {
     private final CopyOnWriteArrayList<DbSpConnection> all_connections;
     private final CopyOnWriteArrayList<DbSpConnection> ide_connections;
     private final Semaphore semaphore;
-//    private final ScheduledFuture
 
     public DbSpPool(DbSpProperties spProperties) {
         this.spProperties = spProperties;
@@ -35,19 +38,21 @@ public class DbSpPool implements PoolController<DbSpConnection> {
     }
 
     /**
-     * create a database connection,add to {@link # all_connections}
+     * create and return a warped database connection,simultaneously do the following things:
+     * <p> 1.add to {@link #all_connections} and {@link #ide_connections} </p>
+     * <p> 2.release semaphore {@link #semaphore} </p>
      *
      * @return available connection
      * @throws SQLException create connection error
      * @see Connection
+     * @see DbSpConnection
      */
     private DbSpConnection create() throws SQLException {
         synchronized (LOCK_OBJ) {
-            long start = System.currentTimeMillis();
             Connection connection = DriverManager.getConnection(spProperties.getUrl(), spProperties.getUsername(), spProperties.getPassword());
             boolean execute = connection.prepareCall(TEST_QUERY).execute();
             if (execute) {
-                DbSpConnection dbSpConnection = new DbSpConnection(connection, spProperties.getMaxSurvivalTime(), ConnectionStatus.IDLE);
+                DbSpConnection dbSpConnection = new DbSpConnection(connection, spProperties.getMaxSurvivalTime(), SourceStatus.IDLE);
                 all_connections.add(dbSpConnection);
                 ide_connections.add(dbSpConnection);
                 releaseSource();
@@ -62,8 +67,8 @@ public class DbSpPool implements PoolController<DbSpConnection> {
     /**
      * try to get an idle connection with time-out
      *
-     * @return
-     * @throws TimeoutException
+     * @return connection
+     * @throws TimeoutException get connection time out error
      */
     public Connection borrow() throws TimeoutException, SQLException {
         try {
@@ -103,18 +108,32 @@ public class DbSpPool implements PoolController<DbSpConnection> {
     }
 
     @Override
-    public Collection<DbSpConnection> sourceIdle() {
+    public Collection<DbSpConnection> IdleSource() {
         return this.ide_connections;
     }
 
     @Override
-    public Collection<DbSpConnection> sourceAll() {
+    public Collection<DbSpConnection> AllSource() {
         return this.all_connections;
     }
 
     @Override
-    public void appendCon() throws SQLException {
-        create();
+    public void newSource() throws SQLException {
+        DbSpConnection dbSpConnection = create();
     }
 
+    @Override
+    public int createdConnections() {
+        return all_connections.size();
+    }
+
+    @Override
+    public int idleConnections() {
+        return ide_connections.size();
+    }
+
+    @Override
+    public int activeConnections() {
+        return createdConnections() - idleConnections();
+    }
 }

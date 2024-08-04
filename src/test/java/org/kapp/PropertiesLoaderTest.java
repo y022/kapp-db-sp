@@ -3,6 +3,7 @@ package org.kapp;
 import org.junit.jupiter.api.Test;
 import org.kapp.support.property.DbSpProperties;
 import org.kapp.support.property.PropertiesLoader;
+import org.openjdk.jol.info.ClassLayout;
 
 /**
  * Author:Heping
@@ -12,7 +13,15 @@ class PropertiesLoaderTest {
 
     @Test
     void createConnectProperties() {
-        DbSpProperties connectProperties = PropertiesLoader.createConnectProperties();
-        System.out.println("connectProperties:" + connectProperties);
+        DbSpProperties properties = PropertiesLoader.createConnectProperties();
+        ClassLayout classLayout = ClassLayout.parseInstance(properties);
+        System.out.println("printable:" + classLayout.toPrintable());
+        System.out.println("=======================================");
+        ClassLayout instance = ClassLayout.parseInstance(new DbSpProperties());
+        System.out.println("printable:" + instance.toPrintable());
+        System.out.println("=======================================");
+        String[] array = {"2", "3"};
+        ClassLayout arrayInstance = ClassLayout.parseInstance(array);
+        System.out.println("printable:" + arrayInstance.toPrintable());
     }
 }

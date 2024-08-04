@@ -26,8 +26,8 @@ public class ConnectionHealthyTask extends PoolTask {
     }
 
     private void checkSurvivalExpire() {
-        Collection<DbSpConnection> allCons = dbSpPool.sourceAll();
-        Collection<DbSpConnection> idleCons = dbSpPool.sourceIdle();
+        Collection<DbSpConnection> allCons = dbSpPool.AllSource();
+        Collection<DbSpConnection> idleCons = dbSpPool.IdleSource();
         Iterator<DbSpConnection> iterator = allCons.iterator();
         while (iterator.hasNext()) {
             DbSpConnection con = iterator.next();

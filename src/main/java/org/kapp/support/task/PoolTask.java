@@ -28,12 +28,12 @@ public abstract class PoolTask implements Runnable {
             DbSpProperties dbSpProperties = dbSpPool.poolProperty();
             Semaphore semaphore = dbSpPool.sourceLimiter();
             int maxIdleThread = dbSpProperties.getMaxIdleThread();
-            int idleSize = dbSpPool.sourceIdle().size();
+            int idleSize = dbSpPool.IdleSource().size();
             if (idleSize < maxIdleThread) {
                 for (int i = 0; i < maxIdleThread - idleSize; i++) {
                     logger.info("attempt to add a new connection...");
                     try {
-                        dbSpPool.appendCon();
+                        dbSpPool.newSource();
                     } catch (Exception e) {
                         logger.error("failed to add new connection, will retry in the next task cycle");
                     }
