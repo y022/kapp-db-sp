@@ -13,6 +13,15 @@ public class DbSpProperties {
     private int maxIdleThread;
     private int connectionTimeOut;
     private long maxSurvivalTime;
+    private int maxWaitingTask;
+
+    public int getMaxWaitingTask() {
+        return maxWaitingTask;
+    }
+
+    public void setMaxWaitingTask(int maxWaitingTask) {
+        this.maxWaitingTask = maxWaitingTask;
+    }
 
     public int getMaxIdleThread() {
         return maxIdleThread;

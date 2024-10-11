@@ -1,7 +1,10 @@
 package org.kapp.core.connection;
 
 import org.kapp.entity.SourceStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -10,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * Date: 2024/7/17 16:54
  */
 public class DbSpConnection extends AbstractDbSpConnection {
+    private final Logger logger = LoggerFactory.getLogger(DbSpConnection.class);
     /**
      * connection create timestamp
      */
@@ -27,27 +31,24 @@ public class DbSpConnection extends AbstractDbSpConnection {
 
     private static final AtomicReferenceFieldUpdater<DbSpConnection, SourceStatus> STATUS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(DbSpConnection.class, SourceStatus.class, "status");
 
-    private final Runnable runnable;
 
-    private static final Object OBJ = new Object();
-
-    public DbSpConnection(Connection delegate, long maxSurvivalTime, SourceStatus status) {
+    public DbSpConnection(Connection delegate, long maxSurvivalTime) {
         super(delegate);
-        this.status = status;
+        this.status = SourceStatus.IDLE;
         this.createTime = System.currentTimeMillis();
         this.closeTime = createTime + maxSurvivalTime;
-        runnable = () -> {
-            if (expire()) {
-                tryClose();
-            }
-        };
     }
 
+    @Override
+    public boolean updateStatus(SourceStatus except, SourceStatus update) {
+        return STATUS_UPDATER.compareAndSet(this, except, update);
+    }
 
     @Override
-    public DbSpConnection using() {
-        STATUS_UPDATER.set(this, SourceStatus.RUNNING);
-        return this;
+    public boolean canUse() {
+        synchronized (this) {
+            return idle() && testAvailable();
+        }
     }
 
     @Override
@@ -63,22 +64,26 @@ public class DbSpConnection extends AbstractDbSpConnection {
     }
 
     @Override
-    public Runnable healthyCheck() {
-        return this.runnable;
-    }
-
-    private boolean expire() {
-        return System.currentTimeMillis() - closeTime <= 0;
-    }
-
-    @Override
-    public boolean available_idle() {
-        return status.equals(SourceStatus.IDLE);
+    public boolean idle() {
+        return SourceStatus.IDLE.equals(STATUS_UPDATER.get(this));
     }
 
     @Override
     public SourceStatus status() {
         return STATUS_UPDATER.get(this);
+    }
+
+    private boolean testAvailable() {
+        try {
+            synchronized (this) {
+                CallableStatement callableStatement = delegate.prepareCall("select 1");
+                return callableStatement.execute();
+            }
+        } catch (Exception e) {
+            logger.error("test available_idle exception", e);
+            return false;
+        }
+
     }
 
 

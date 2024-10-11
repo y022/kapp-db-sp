@@ -15,22 +15,22 @@ import java.util.logging.Logger;
  */
 public class DbSpDataSource implements DataSource {
     private final DbSpProperties spProperties;
-    private final ConnectionManager connectionManager;
+    private final DbSPConnectionManager dbSPConnectionManager;
 
     public DbSpDataSource(DbSpProperties spProperties) {
         this.spProperties = spProperties;
-        this.connectionManager = new ConnectionManager(spProperties);
+        this.dbSPConnectionManager = new DbSPConnectionManager(spProperties);
     }
 
 
     @Override
     public Connection getConnection() throws SQLException {
-        return connectionManager.getCon();
+        return dbSPConnectionManager.getConnection();
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        return connectionManager.getCon();
+        return dbSPConnectionManager.getConnection();
     }
 
     @Override

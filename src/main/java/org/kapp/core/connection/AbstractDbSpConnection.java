@@ -21,17 +21,17 @@ public abstract class AbstractDbSpConnection implements Connection {
      */
     protected Connection delegate;
 
-    public abstract AbstractDbSpConnection using();
+    public abstract boolean canUse();
 
     public abstract void tryClose();
 
     public abstract boolean canStop();
 
-    public abstract Runnable healthyCheck();
-
-    public abstract boolean available_idle();
+    public abstract boolean idle();
 
     public abstract SourceStatus status();
+
+    public abstract boolean updateStatus(SourceStatus except, SourceStatus update);
 
     @Override
     public Statement createStatement() throws SQLException {
